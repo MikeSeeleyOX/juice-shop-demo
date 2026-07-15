@@ -1,0 +1,17 @@
+import os
+
+def ping_server(ip_address):
+    # VULNERABILITY: Unsanitized user input passed directly to the operating system.
+    # An attacker could enter something like: "127.0.0.1; cat /etc/passwd"
+    # This would execute the ping, and then maliciously read sensitive system files.
+    
+    print(f"Attempting to ping: {ip_address}")
+    
+    # Concatenating strings directly into a shell command is a major red flag
+    command = "ping -c 1 " + ip_address
+    os.system(command)
+
+if __name__ == "__main__":
+    # Pretend this input comes from a user on a website
+    user_provided_ip = "127.0.0.1" 
+    ping_server(user_provided_ip)
