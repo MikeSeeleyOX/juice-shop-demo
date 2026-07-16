@@ -1,0 +1,2 @@
+INTERNAL_API_KEY = "sk-live-5f2b8c3d9e1a4b7c6d5e4f3a2b1c0d" 
+DB_CONNECTION = "postgresql://admin:Password123!@prod-db.internal:5432/users"
