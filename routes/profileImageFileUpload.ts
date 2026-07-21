@@ -4,6 +4,7 @@
  */
 
 import fs = require('fs')
+import path = require('path')
 import { Request, Response, NextFunction } from 'express'
 import { UserModel } from '../models/user'
 
@@ -25,7 +26,11 @@ module.exports = function fileUpload () {
       if (uploadedFileType !== null && utils.startsWith(uploadedFileType.mime, 'image')) {
         const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
         if (loggedInUser) {
-          fs.open(`frontend/dist/frontend/assets/public/images/uploads/${loggedInUser.data.id}.${uploadedFileType.ext}`, 'w', function (err, fd) {
+          const safeUserId = path.basename(loggedInUser.data.id)
+          const safeExt = path.basename(uploadedFileType.ext)
+          const uploadDir = path.join('frontend', 'dist', 'frontend', 'assets', 'public', 'images', 'uploads')
+          const filePath = path.join(uploadDir, `${safeUserId}.${safeExt}`)
+          fs.open(filePath, 'w', function (err, fd) {
             if (err != null) logger.warn('Error opening file: ' + err.message)
             // @ts-expect-error
             fs.write(fd, buffer, 0, buffer.length, null, function (err) {
@@ -35,7 +40,7 @@ module.exports = function fileUpload () {
           })
           UserModel.findByPk(loggedInUser.data.id).then(async (user: UserModel | null) => {
             if (user) {
-              return await user.update({ profileImage: `assets/public/images/uploads/${loggedInUser.data.id}.${uploadedFileType.ext}` })
+              return await user.update({ profileImage: path.join('assets', 'public', 'images', 'uploads', `${safeUserId}.${safeExt}`) })
             }
           }).catch((error: Error) => {
             next(error)
