@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+const path = require('path')
 
 const accuracy = require('../lib/accuracy')
 const challengeUtils = require('../lib/challengeUtils')
@@ -19,6 +20,7 @@ interface cache {
 const CodeFixes: cache = {}
 
 export const readFixes = (key: string) => {
+  key = path.basename(key)
   if (CodeFixes[key]) {
     return CodeFixes[key]
   }
@@ -27,7 +29,7 @@ export const readFixes = (key: string) => {
   let correct: number = -1
   for (const file of files) {
     if (file.startsWith(`${key}_`)) {
-      const fix = fs.readFileSync(`${FixesDir}/${file}`).toString()
+      const fix = fs.readFileSync(path.join(FixesDir, file)).toString()
       const metadata = file.split('_')
       const number = metadata[1]
       fixes.push(fix)
@@ -55,7 +57,8 @@ interface VerdictRequestBody {
 }
 
 export const serveCodeFixes = () => (req: Request<FixesRequestParams, {}, {}>, res: Response, next: NextFunction) => {
-  const key = req.params.key
+  let key = req.params.key
+  key = path.basename(key)
   const fixData = readFixes(key)
   if (fixData.fixes.length === 0) {
     res.status(404).json({
@@ -69,7 +72,8 @@ export const serveCodeFixes = () => (req: Request<FixesRequestParams, {}, {}>, r
 }
 
 export const checkCorrectFix = () => async (req: Request<{}, {}, VerdictRequestBody>, res: Response, next: NextFunction) => {
-  const key = req.body.key
+  let key = req.body.key
+  key = path.basename(key)
   const selectedFix = req.body.selectedFix
   const fixData = readFixes(key)
   if (fixData.fixes.length === 0) {
@@ -78,8 +82,9 @@ export const checkCorrectFix = () => async (req: Request<{}, {}, VerdictRequestB
     })
   } else {
     let explanation
-    if (fs.existsSync('./data/static/codefixes/' + key + '.info.yml')) {
-      const codingChallengeInfos = yaml.load(fs.readFileSync('./data/static/codefixes/' + key + '.info.yml', 'utf8'))
+    const infoFilePath = path.join('./data/static/codefixes', key + '.info.yml')
+    if (fs.existsSync(infoFilePath)) {
+      const codingChallengeInfos = yaml.load(fs.readFileSync(infoFilePath, 'utf8'))
       const selectedFixInfo = codingChallengeInfos?.fixes.find(({ id }: { id: number }) => id === selectedFix + 1)
       if (selectedFixInfo?.explanation) explanation = res.__(selectedFixInfo.explanation)
     }
