@@ -74,6 +74,12 @@ export const serveCodeFixes = () => (req: Request<FixesRequestParams, {}, {}>, r
 export const checkCorrectFix = () => async (req: Request<{}, {}, VerdictRequestBody>, res: Response, next: NextFunction) => {
   let key = req.body.key
   key = path.basename(key)
+  if (key.includes('..') || key.includes('/') || key.includes('\\')) {
+    res.status(400).json({
+      error: 'Invalid key parameter'
+    })
+    return
+  }
   const selectedFix = req.body.selectedFix
   const fixData = readFixes(key)
   if (fixData.fixes.length === 0) {
