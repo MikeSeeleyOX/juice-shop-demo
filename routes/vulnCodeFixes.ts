@@ -88,7 +88,13 @@ export const checkCorrectFix = () => async (req: Request<{}, {}, VerdictRequestB
     })
   } else {
     let explanation
-    const infoFilePath = path.join('./data/static/codefixes', key + '.info.yml')
+    const infoFilePath = path.resolve('./data/static/codefixes', key + '.info.yml')
+    if (!infoFilePath.startsWith(path.resolve('./data/static/codefixes') + path.sep)) {
+      res.status(400).json({
+        error: 'Invalid key parameter'
+      })
+      return
+    }
     if (fs.existsSync(infoFilePath)) {
       const codingChallengeInfos = yaml.load(fs.readFileSync(infoFilePath, 'utf8'))
       const selectedFixInfo = codingChallengeInfos?.fixes.find(({ id }: { id: number }) => id === selectedFix + 1)
